@@ -1,0 +1,127 @@
+﻿.region-info-container {
+    position: relative;
+    float: left;
+    width: 1000px;
+    margin: auto;
+    font-size: 16px;
+}
+
+    .region-info-container * {
+        opacity: 0.9;
+    }
+
+.logo-container {
+    position: relative;
+    display: inline-block;
+}
+
+    .logo-container img {
+        width: 300px;
+        height: 200px;
+        margin: 0 32px;
+    }
+
+.region-selector-container {
+    position: relative;
+    float: right;
+    margin-right: 32px;
+}
+
+    .region-selector-container select {
+        text-shadow: 0 1px 0 #9ea2a6;
+        outline-color: #9ea2a6;
+    }
+
+    /*doesn't work*/
+    .region-selector-container option:hover {
+        background-color: #9ea2a6 !important;
+        box-shadow: 0 0 10px 100px #9ea2a6 inset !important;
+    }
+
+.traffic-container,
+.weather-container {
+    position: relative;
+    width: 100%;
+    padding: 32px;
+    background-color: #fff;
+}
+
+.traffic-container {
+    margin-bottom: 10px;
+}
+
+    .traffic-container div,
+    .weather-container div {
+        display: inline-block;
+    }
+
+    .traffic-container .traffic-level {
+        width: 2.3em;
+        height: 2.3em;
+        padding: 0.5em;
+        text-align: center;
+        border-radius: 50%;
+        vertical-align: bottom;
+    }
+
+    .traffic-container .region-title {
+        margin-left: 0.6em;
+        font-weight: 700;
+        font-size: 1.7em;
+    }
+
+    .traffic-container .traffic-info,
+    .weather-container .weather-info {
+        position: relative;
+        float: right;
+        bottom: -0.75em;
+    }
+
+        .traffic-container .traffic-info .traffic-caption {
+            font-weight: 700;
+        }
+
+    .traffic-container .info-date,
+    .traffic-container .traffic-description,
+    .weather-container .weather-description {
+        font-size: 0.8em;
+    }
+
+.weather-container .weather-header {
+    position: relative;
+    width: 100%;
+}
+
+    .weather-container .weather-header .current-weather-logo {
+        position: relative;
+        bottom: 5px;
+    }
+
+.weather-container .current-weather-temperature {
+    font-weight: 700;
+    font-size: 1.7em;
+}
+
+.weather-container .weather-info {
+    position: relative;
+    float: right;
+}
+
+    .weather-container .weather-info .weather-caption {
+        font-weight: 700;
+    }
+
+.weather-container .day-part-weather-container {
+    width: calc(100% - 55px);
+    margin-left: 55px;
+    border-top: 1px solid #9ea2a6;
+}
+
+    .weather-container .day-part-weather-container td {
+        width: 15%;
+        padding: 10px;
+    }
+
+    .weather-container .day-part-weather-container td:last-child {
+        width: 55%;
+    }
