@@ -1,31 +1,91 @@
-﻿using System;
+﻿using Polly;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
+using Taxi.DataAccess.Interfaces;
 using Taxi.DataAccess.RegionInfo.Model;
 
 namespace Taxi.DataAccess.RegionInfo
 {
     internal class RegionInfoRepository
     {
+        #region private fields
+
         private const string regionInfoEndpointWithParametr = "https://export.yandex.com/bar/reginfo.xml?region={0}";
         private const string regionInfoEndpointWithDefault = "https://export.yandex.com/bar/reginfo.xml?region=143";
+        private const string citiesEndpoint = "https://pogoda.yandex.ru/static/cities.xml";
+
+        private string _pathToFakeData;
 
         private XDocument _document;
 
-        public string PathToFakeData { get; }
+        private bool _isRegionConvertedToCity = false;
+
+        #endregion
 
         public RegionInfoRepository(string pathToFakeData = null)
         {
-            this.PathToFakeData = pathToFakeData;
+            this._pathToFakeData = pathToFakeData;
         }
 
-        public Info GetRegionInfo(int regionCode)
-            => new Info
+        #region country and city list
+
+        public IEnumerable<Country> GetCountryList()
+        {
+            try
             {
-                Weater = GetWeather(regionCode),
-                Traffic = GetTraffic(regionCode)
-            };
+                return Policy.Handle<System.Xml.XmlException>()
+                        .Or<System.Net.WebException>()
+                        .Retry(3)
+                        .Execute(() => XDocument.Load(citiesEndpoint)
+                                        .Element("cities")
+                                        .Elements("country")
+                                        .Select(country => new Country
+                                        {
+                                            Name = country.Attribute("name").Value,
+                                            Cities = country.Elements("city")?.Select(x => new City
+                                            {
+                                                RegionId = int.Parse(x.Attribute("region").Value),
+                                                Name = x.Value
+                                            }).ToList()
+                                        })
+                        );
+            }
+            catch (Exception ex) when (
+                ex is System.Xml.XmlException ||
+                ex is System.Net.WebException
+            )
+            {
+                if (_pathToFakeData == null)
+                    throw ex;
+
+                return new List<Country>
+                {
+                    new Country
+                    {
+                        Name = "Украина",
+                        Cities = new List<City>
+                        {
+                            new City
+                            {
+                                Name = "Киев",
+                                RegionId = 143
+                            }
+                        }
+                    }
+                };
+            }
+        }
+
+        public IEnumerable<City> GetCityList(string countryName) =>
+            GetCountryList()
+                .Single(x => x.Name == countryName)
+                .Cities;
+
+        #endregion
+
+        #region region information
 
         public Info GetRegionInfo()
             => new Info
@@ -34,25 +94,20 @@ namespace Taxi.DataAccess.RegionInfo
                 Traffic = GetTraffic()
             };
 
+        public Info GetRegionInfo(int regionCode)
+            => new Info
+            {
+                Traffic = GetTraffic(regionCode),
+                Weater = GetWeather(regionCode)
+            };
+
         public Traffic GetTraffic(int regionCode = 0)
         {
             var result = new Traffic();
 
             if (_document == null)
             {
-                try
-                {
-                    DownloadDocument(regionCode);
-                }
-                catch (Exception ex) when (
-                    ex is System.Xml.XmlException ||
-                    ex is System.Net.WebException
-                )
-                {
-                    result.ResultMessage = ex.Message;
-                    result.HasError = true;
-                    return result;
-                }
+                DownloadDocument(regionCode, result);
             }
 
             var info = _document.Element("info");
@@ -71,9 +126,19 @@ namespace Taxi.DataAccess.RegionInfo
             var regionTraffic = info.Element("traffic")?.Element("region");
             if (regionTraffic == null)
             {
-                result.ResultMessage = $"Traffic information for {result.RegionName} isn't available.";
-                result.HasError = true;
-                return result;
+                if (_isRegionConvertedToCity)
+                {
+                    result.ResultMessage = $"Traffic information for {result.RegionName} isn't available.";
+                    result.HasError = true;
+                    return result;
+                }
+                else
+                {
+                    regionCode = int.Parse(info.Element("weather").Attribute("region").Value);
+                    DownloadDocument(regionCode, result);
+                    _isRegionConvertedToCity = true;
+                    return GetTraffic(regionCode);
+                }
             }
 
             result.Time = regionTraffic.Element("time").Value;
@@ -81,7 +146,7 @@ namespace Taxi.DataAccess.RegionInfo
             result.TrafficColor = regionTraffic.Element("icon").Value;
             result.Comment = regionTraffic.Elements("hint").Single(x => x.Attribute("lang").Value == "ru").Value;
 
-            result.ResultMessage = "Success.";
+            result.ResultMessage = result.ResultMessage ?? "Success.";
 
             return result;
         }
@@ -92,19 +157,7 @@ namespace Taxi.DataAccess.RegionInfo
 
             if (_document == null)
             {
-                try
-                {
-                    DownloadDocument(regionCode);
-                }
-                catch (Exception ex) when (
-                    ex is System.Xml.XmlException ||
-                    ex is System.Net.WebException
-                )
-                {
-                    result.ResultMessage = ex.Message;
-                    result.HasError = true;
-                    return result;
-                }
+                DownloadDocument(regionCode, result);
             }
 
             var info = _document.Element("info");
@@ -157,35 +210,50 @@ namespace Taxi.DataAccess.RegionInfo
             return result;
         }
 
-        private void DownloadDocument(int regionCode)
-        {
-            if (PathToFakeData != null)
-            {
-                _document = GenerateFakeXML();
-                return;
-            }
+        #endregion
 
+        #region download document
+        private void DownloadDocument(int regionCode, IHaveErrorInfo item)
+        {
             if (regionCode == 0)
             {
-                DownloadDocument();
+                DownloadDocument(item);
                 return;
             }
 
-            _document = XDocument.Load(string.Format(regionInfoEndpointWithParametr, regionCode));
+            DownloadDocument(string.Format(regionInfoEndpointWithParametr, regionCode), item);
         }
 
-        private void DownloadDocument()
+        private void DownloadDocument(IHaveErrorInfo item)
+            => DownloadDocument(regionInfoEndpointWithDefault, item);
+
+        private void DownloadDocument(string path, IHaveErrorInfo item)
         {
-            if (PathToFakeData != null)
+            try
             {
-                _document = GenerateFakeXML();
-                return;
+                Policy.Handle<System.Xml.XmlException>()
+                        .Or<System.Net.WebException>()
+                        .Retry(3)
+                        .Execute(() => _document = XDocument.Load(path));
             }
-
-            _document = XDocument.Load(regionInfoEndpointWithDefault);
+            catch (Exception ex) when (
+                ex is System.Xml.XmlException ||
+                ex is System.Net.WebException
+            )
+            {
+                if (_pathToFakeData != null)
+                {
+                    item.HasError = true;
+                    item.ResultMessage = ex.Message;
+                    _document = XDocument.Load(_pathToFakeData);
+                }
+                else
+                {
+                    throw ex;
+                }
+            }
         }
 
-        private XDocument GenerateFakeXML() =>
-            XDocument.Load(PathToFakeData);
+        #endregion
     }
 }

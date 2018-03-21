@@ -1,12 +1,14 @@
-﻿namespace Taxi.DataAccess.RegionInfo.Model
+﻿using Taxi.DataAccess.Interfaces;
+
+namespace Taxi.DataAccess.RegionInfo.Model
 {
-    public class Traffic
+    public class Traffic : IHaveErrorInfo
     {
         public int RegionId { get; set; }
 
         public string RegionName { get; set; }
 
-        public int TrafficLevel { get; set; }
+        public int? TrafficLevel { get; set; }
 
         public string TrafficColor { get; set; }
 

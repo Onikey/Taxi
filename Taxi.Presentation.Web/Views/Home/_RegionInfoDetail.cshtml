@@ -1,0 +1,47 @@
+﻿@model Taxi.DataAccess.RegionInfo.Model.Info
+
+@if (Model != null)
+{
+    <div class="traffic-container">
+        @if (Model.Traffic.TrafficLevel != null)
+        {
+        <div class="traffic-level" style="background-color: @Model.Traffic.TrafficColor;">@Model.Traffic.TrafficLevel</div>
+        }
+        <div class="region-title">@Model.Traffic.RegionName</div>
+        <div class="info-date">@Model.Weater.Date.ToLocalTime().ToString("ddd, MMMM dd, H:mm")</div>
+        <div class="traffic-info">
+            <div class="traffic-caption">Пробки: </div>
+            <div class="traffic-description">
+                @(Model.Traffic.Comment ?? "Данные по этому городу отсутствуют.")
+            </div>
+        </div>        
+    </div>
+
+    <div class="weather-container">
+        <div class="weather-header">
+            <div class="current-weather-logo"><img src="@Model.Weater.Detail.ImageUrl" /></div>
+            <div class="current-weather-temperature">@Model.Weater.Detail.Temperature&deg;</div>
+            <div class="weather-info">
+                <div class="weather-caption">Погода: </div>
+                <div class="weather-description">@Model.Weater.Detail.Description</div>
+            </div>
+        </div>
+        <table class="day-part-weather-container">
+            <tbody>
+                @foreach (var item in Model.Weater.DayParts)
+                {
+                    <tr class="day-part-weather">
+                        <td class="day-part-title">@System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(item.Title)</td>
+                        <td class="day-part-logo"><img src="@item.ImageUrl" /></td>
+                        <td class="day-part-temperature">@( item.TemperatureMax != null ? item.TemperatureMax : "?" )&deg;/@( item.TemperatureMax != null ? item.TemperatureMin : "?" )&deg;</td>
+                        <td></td>
+                    </tr>
+                }
+            </tbody>
+        </table>        
+    </div>
+}
+else
+{
+    <h1>Данные отсутствуют</h1>
+}

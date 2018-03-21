@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using Taxi.DataAccess.Interfaces;
 
 namespace Taxi.DataAccess.RegionInfo.Model
 {
-    public class Weather
+    public class Weather : IHaveErrorInfo
     {
         public int RegionId { get; set; }
 
@@ -17,8 +18,8 @@ namespace Taxi.DataAccess.RegionInfo.Model
 
         public IList<DayPart> DayParts { get; set; }
 
-        public bool HasError { get; internal set; } = false;
+        public bool HasError { get; set; } = false;
 
-        public string ResultMessage { get; internal set; }
+        public string ResultMessage { get; set; }
     }
 }

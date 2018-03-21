@@ -1,59 +1,36 @@
-﻿@Styles.Render("~/RegionInfo/css")
-@{Taxi.DataAccess.RegionInfo.Model.Info info = ViewBag.RegionInfo;}
+﻿@model Taxi.DataAccess.RegionInfo.Model.Info
+@Styles.Render("~/RegionInfo/css")
 
 <div class="region-info-container">
+    @if (Model.Traffic.HasError || Model.Weater.HasError)
+    {
+        if (Model.Traffic.ResultMessage != null)
+        {
+            <h1>Traffic result: @Model.Traffic.ResultMessage</h1>
+        }
+        if (Model.Weater.ResultMessage != null)
+        {
+            <h1>Weater result: @Model.Weater.ResultMessage</h1>
+        }
+    }
     <div class="logo-container"><img src="~/Content/taxi-logo.png" /></div>
 
     <div class="region-selector-container">
         <div class="form-group">
             <label for="country">Ваша страна</label>
-            <select class="form-control" id="country">
-                <option value="" disabled selected>Страна не выбрана</option>
-                <option value="Украина">Украина</option>
-            </select>
+            @Html.DropDownList("Countries", ViewBag.Countries as List<SelectListItem>, new { @class = "form-control" })
         </div>
         <div class="form-group">
             <label for="country">Ваш город</label>
-            <select class="form-control" id="city">
+            <select class="form-control" id="Cities">
                 <option value="" disabled selected>Город не выбран</option>
-                <option value="Киев">Киев</option>
             </select>
         </div>
     </div>
 
-    <div class="traffic-container">
-        <div class="traffic-level" style="background-color: @info.Traffic.TrafficColor;">@info.Traffic.TrafficLevel</div>
-        <div class="region-title">@info.Traffic.RegionName</div>
-        <div class="info-date">@info.Weater.Date.ToLocalTime().ToString("ddd, MMMM dd, H:mm")</div>
-        <div class="traffic-info">
-            <div class="traffic-caption">Traffic: </div>
-            <div class="traffic-description">
-                @info.Traffic.Comment
-            </div>
-        </div>
+    <div id="region-info-detail">
+        @Html.Partial("_RegionInfoDetail", Model)
     </div>
+</div>
 
-    <div class="weather-container">
-        <div class="weather-header">
-            <div class="current-weather-logo"><img src="@info.Weater.Detail.ImageUrl" /></div>
-            <div class="current-weather-temperature">@info.Weater.Detail.Temperature&deg;</div>
-            <div class="weather-info">
-                <div class="weather-caption">Погода: </div>
-                <div class="weather-description">@info.Weater.Detail.Description</div>
-            </div>
-        </div>
-        <table class="day-part-weather-container">
-            <tbody>
-                @foreach (var item in info.Weater.DayParts)
-                {
-                    <tr class="day-part-weather">
-                        <td class="day-part-title">@System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(item.Title)</td>
-                        <td class="day-part-logo"><img src="@item.ImageUrl" /></td>
-                        <td class="day-part-temperature">@( item.TemperatureMax != null ? item.TemperatureMax : "?" )&deg;/@( item.TemperatureMax != null ? item.TemperatureMin : "?" )&deg;</td>
-                        <td></td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-
+@Scripts.Render("~/bundles/regionInfo")

@@ -1,4 +1,5 @@
-﻿using Taxi.DataAccess.RegionInfo.Model;
+﻿using System.Collections.Generic;
+using Taxi.DataAccess.RegionInfo.Model;
 
 namespace Taxi.DataAccess.RegionInfo
 {
@@ -19,5 +20,11 @@ namespace Taxi.DataAccess.RegionInfo
 
         public Info GetRegionInfo(int regionCode = 0) =>
             _repo.GetRegionInfo(regionCode);
+
+        public IEnumerable<Country> GetCountryList() =>
+            _repo.GetCountryList();
+
+        public IEnumerable<City> GetCityList(string countryName) =>
+            _repo.GetCityList(countryName);
     }
 }
