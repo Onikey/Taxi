@@ -43,12 +43,12 @@ namespace Taxi.Presentation.Web.Controllers
         }
 
         public ActionResult GetRegionInfoDetail(int id) =>
-            PartialView("_RegionInfoDetail", new RegionInfoManager().GetRegionInfo(id));
+            PartialView("_RegionInfoDetail", new RegionInfoManager(PathToFakeData).GetRegionInfo(id));
 
         [HttpGet]
         public JsonResult GetCities(string id)
         {
-            var result = new RegionInfoManager()
+            var result = new RegionInfoManager(PathToFakeData)
                 .GetCityList(id)
                 .Select(x => new SelectListItem
                 {
